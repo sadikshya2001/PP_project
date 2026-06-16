@@ -29,14 +29,15 @@ The tiled GPU implementation achieved the best performance. For a 1024 x 1024 ma
 - `run_gpu.sh` — Mahti Slurm GPU job script
 - `report/final_report.md` — final report
 
+## Authors
+
+- Sadikshya Satyal
+- Muhammad Zahid
+- Ayodeji Ibrahim
+
 ## How to Run on Mahti
 
 ```bash
 module load cuda/11.5.0
 sbatch run_gpu.sh
 
-## Authors
-
-- Sadikshya Satyal
-- Muhammad Zahid
-- Ayodeji Ibrahim
