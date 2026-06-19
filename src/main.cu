@@ -168,10 +168,8 @@ bool verify(float* ref, float* test, int N) {
 
 int main() {
 
-    int sizes[] = {128, 256, 512, 1024};
-
-    int numSizes = 4;
-
+    int sizes[] = {128, 256, 512, 1024, 2048};
+    int numSizes = sizeof(sizes) / sizeof(sizes[0]);
 
 
     FILE* file = fopen("results/benchmark_results.csv", "w");
