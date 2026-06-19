@@ -2,147 +2,183 @@
 
 **Authors:** Sadikshya Satyal, Ayodeji Ibrahim, Muhammad Zahid
 
-## 1. Introduction
+---
 
-Matrix multiplication is one of the most important operations in scientific computing, computer graphics, numerical simulations, and machine learning. Many modern workloads rely heavily on multiplying large matrices, especially in deep learning and linear algebra applications.
+# 1. Introduction
 
-However, matrix multiplication is computationally expensive. For two square matrices of size N x N, the standard matrix multiplication algorithm has a time complexity of O(N³). This makes it a good candidate for parallel computing, since each element of the output matrix can be computed independently.
+Matrix multiplication is one of the most important operations in scientific computing, machine learning, computer graphics, and numerical simulations. Because each output element can be computed independently, matrix multiplication is highly suitable for parallel execution on modern GPUs.
 
-The goal of this project is to investigate how GPU parallelization and memory optimization affect the performance of matrix multiplication. We implemented and compared three versions:
+The objective of this project is to investigate the performance benefits of GPU acceleration using CUDA. Four implementations were developed and compared:
 
-1. CPU naive matrix multiplication
-2. Naive CUDA GPU matrix multiplication
-3. Optimized CUDA tiled matrix multiplication using shared memory
+1. CPU Naive Matrix Multiplication
+2. Naive CUDA GPU Matrix Multiplication
+3. Tiled CUDA GPU Matrix Multiplication using Shared Memory
+4. NVIDIA cuBLAS Matrix Multiplication
 
-The project focuses on CUDA programming, benchmarking, correctness checking, and performance analysis.
+The project focuses on CUDA programming, performance optimization, benchmarking, correctness verification, and comparison against a state-of-the-art GPU library.
 
 ---
 
-## 2. Background
+# 2. Background
 
 Given two matrices A and B, the matrix product C is computed as:
 
-C[i][j] = sum of A[i][k] * B[k][j] for all k
+C[i][j] = Σ A[i][k] × B[k][j]
 
-Each element C[i][j] can be calculated independently. This independence makes matrix multiplication highly suitable for GPU execution, where thousands of threads can run in parallel.
+Each element C[i][j] can be calculated independently. This independence makes matrix multiplication highly suitable for GPU execution, where thousands of threads can run simultaneously.
 
-In the naive GPU version, each CUDA thread computes one output element of matrix C. This already provides significant parallelism. However, the naive approach repeatedly accesses global memory, which is slower than shared memory.
+In the naive GPU implementation, each CUDA thread computes one output element of matrix C. While this provides significant parallelism, it repeatedly accesses global memory, which is relatively slow.
 
-To improve performance, we implemented a tiled version. In this version, each thread block loads a small tile of matrix A and matrix B into shared memory. Threads then reuse these cached values to compute parts of the output matrix. This reduces repeated global memory access and improves performance.
+To improve performance, a tiled implementation using shared memory was developed. In this approach, blocks of matrix data are loaded into shared memory and reused by multiple threads. This reduces global memory traffic and improves memory locality.
+
+To further evaluate performance, the implementation was compared against NVIDIA cuBLAS, a highly optimized GPU linear algebra library widely used in scientific computing and deep learning applications.
 
 ---
 
-## 3. Implementation
+# 3. Implementation
 
-### 3.1 CPU Naive Implementation
+## 3.1 CPU Naive Implementation
 
-The CPU implementation uses three nested loops. For each output element, the program computes the dot product of one row of A and one column of B.
+The CPU implementation uses three nested loops. For each output element, the program computes the dot product of one row of matrix A and one column of matrix B.
 
-This version is simple and acts as the baseline for performance comparison.
+This implementation serves as the baseline for all performance comparisons.
 
-### 3.2 Naive CUDA Implementation
+## 3.2 Naive CUDA Implementation
 
-The naive CUDA implementation assigns one GPU thread to each output element of the result matrix.
+The naive CUDA implementation assigns one GPU thread to each output element.
 
 Each thread:
-- Computes its row and column index
-- Iterates over k
-- Computes one value of C[row][col]
 
-This version exposes the parallel nature of matrix multiplication.
+* Computes its row index
+* Computes its column index
+* Iterates over all values of k
+* Produces one element of the output matrix
 
-### 3.3 Tiled CUDA Implementation
+This implementation exposes the natural parallelism of matrix multiplication.
 
-The tiled CUDA implementation uses shared memory. Each CUDA block loads small tiles of matrix A and matrix B into shared memory. Threads inside the block then reuse these values.
+## 3.3 Tiled CUDA Implementation
 
-This reduces expensive global memory accesses and improves memory locality.
+The tiled CUDA implementation uses shared memory to reduce global memory accesses.
 
-The tile size used in this project was 16 x 16.
+Each CUDA block loads tiles of matrices A and B into shared memory. Threads reuse these values to perform multiplication and accumulation operations.
 
----
+Benefits of this approach include:
 
-## 4. Experimental Setup
+* Reduced global memory access
+* Improved memory locality
+* Better GPU utilization
+* Higher overall performance
 
-The experiments were run on the CSC Mahti supercomputer using a GPU node.
+A tile size of 16 × 16 was used throughout the experiments.
 
-Hardware and software setup:
+## 3.4 NVIDIA cuBLAS Implementation
 
-- Platform: CSC Mahti
-- GPU: NVIDIA A100
-- CUDA version: 11.5
-- Programming language: CUDA C/C++
-- Job scheduler: Slurm
-- GPU partition: gputest
+To compare against a state-of-the-art solution, NVIDIA's cuBLAS library was used.
 
-The tested matrix sizes were:
+Matrix multiplication was performed using the `cublasSgemm()` routine. cuBLAS is highly optimized for NVIDIA GPUs and represents an industry-standard implementation for dense matrix multiplication.
 
-- 128 x 128
-- 256 x 256
-- 512 x 512
-- 1024 x 1024
-- 2048 x 2048
-
-For each matrix size, we measured:
-- CPU execution time
-- Naive GPU kernel execution time
-- Tiled GPU kernel execution time
-- Speedup relative to CPU
-- Correctness compared to CPU result
+This comparison allows evaluation of how closely the custom CUDA implementation approaches production-quality GPU performance.
 
 ---
 
-## 5. Results
+# 4. Experimental Setup
+
+Experiments were performed on the CSC Mahti supercomputer.
+
+## Hardware and Software
+
+* Platform: CSC Mahti
+* GPU: NVIDIA A100
+* CUDA Version: 11.5
+* Programming Language: CUDA C/C++
+* Scheduler: Slurm
+* GPU Partition: gputest
+
+## Matrix Sizes
+
+The following square matrix sizes were tested:
+
+* 128 × 128
+* 256 × 256
+* 512 × 512
+* 1024 × 1024
+* 2048 × 2048
+
+For each matrix size, the following metrics were measured:
+
+* CPU execution time
+* Naive GPU execution time
+* Tiled GPU execution time
+* cuBLAS execution time
+* Speedup relative to CPU execution
+* Correctness verification
+
+---
+
+# 5. Results
 
 The benchmark results are shown below.
 
-| Matrix Size N | CPU Time (ms) | GPU Naive Time (ms) | GPU Tiled Time (ms) | Naive Speedup | Tiled Speedup |
-|---:|---:|---:|---:|---:|---:|
-| 128 | 9.057 | 0.073 | 0.015 | 124.57x | 609.98x |
-| 256 | 72.785 | 0.032 | 0.024 | 2302.16x | 3048.97x |
-| 512 | 594.912 | 0.139 | 0.091 | 4283.64x | 6532.33x |
-| 1024 | 4965.791 | 0.899 | 0.604 | 5525.60x | 8218.46x |
-| 2048 | 42802.781 | 7.014 | 4.697 | 6102.33x | 9113.49x |
+| Matrix Size N | CPU Time (ms) | GPU Naive (ms) | GPU Tiled (ms) | cuBLAS (ms) |
+| ------------: | ------------: | -------------: | -------------: | ----------: |
+|           128 |         9.146 |          0.062 |          0.015 |     168.628 |
+|           256 |        73.919 |          0.035 |          0.027 |      21.019 |
+|           512 |       609.954 |          0.143 |          0.093 |       0.105 |
+|          1024 |      4941.685 |          0.940 |          0.605 |       0.277 |
+|          2048 |     55221.766 |          7.022 |          4.696 |       1.318 |
 
-All GPU results were verified against the CPU implementation, and both GPU versions produced correct outputs for all tested matrix sizes.
+All implementations produced correct results when compared against the CPU reference implementation.
 
-The generated graphs are available in:
+Generated graphs:
 
-- `results/graphs/runtime_comparison.png`
-- `results/graphs/speedup_comparison.png`
+* Runtime comparison graph
+* Speedup comparison graph
 
----
+These graphs are available in the repository under:
 
-## 6. Discussion
-
-The benchmark results show a large performance improvement when using GPU acceleration. Even the naive CUDA implementation significantly outperformed the CPU implementation because the matrix multiplication workload can be divided across many GPU threads.
-
-The tiled GPU implementation achieved the best performance overall. This is because it uses shared memory to reduce repeated global memory accesses. Global memory access is relatively slow, so reusing values from shared memory improves efficiency.
-
-For the largest matrix size, N = 2048, the CPU implementation required 42802.781 ms, while the tiled GPU implementation required only 4.697 ms. This corresponds to a speedup of approximately 9113.49x.
-
-The results also show that the benefit of GPU acceleration becomes more visible as the matrix size increases. Larger matrices provide more work for the GPU, allowing better utilization of parallel hardware.
-
-One limitation of this benchmark is that the GPU timing only measures kernel execution time and does not include all data transfer overheads between CPU and GPU memory. This is acceptable for analyzing kernel performance, but future work could include end-to-end timing for a more complete comparison.
+`results/graphs/`
 
 ---
 
-## 7. Conclusion
+# 6. Discussion
 
-This project demonstrated the performance benefits of GPU acceleration for matrix multiplication.
+The benchmark results demonstrate the significant benefits of GPU acceleration for matrix multiplication.
 
-We implemented a CPU baseline, a naive CUDA implementation, and an optimized tiled CUDA implementation using shared memory. The tiled implementation achieved the best performance and reached a speedup of approximately 9113.49x for a 2048 x 2048 matrix.
+Even the naive CUDA implementation substantially outperformed the CPU baseline because the workload can be distributed across thousands of GPU threads.
 
-The results confirm that matrix multiplication is highly suitable for GPU parallelization and that memory optimization using shared memory can significantly improve performance.
+The tiled CUDA implementation further improved performance by utilizing shared memory. By reducing global memory accesses and increasing data reuse, the tiled implementation achieved significantly better performance than the naive GPU version.
+
+For the largest matrix size (2048 × 2048), the CPU implementation required 55221.766 ms, while the tiled CUDA implementation required only 4.696 ms. This corresponds to a speedup of approximately 11759.88×.
+
+The results also demonstrate that GPU acceleration becomes increasingly beneficial as matrix size grows. Larger matrices provide sufficient computational work to fully utilize the GPU's parallel processing capabilities.
+
+The cuBLAS implementation achieved the highest performance for large matrix sizes. For the largest benchmark, cuBLAS completed the computation in only 1.318 ms, corresponding to a speedup of approximately 41883.41× relative to the CPU baseline.
+
+Although the custom tiled CUDA implementation did not surpass cuBLAS, it demonstrated many of the same optimization principles employed by highly optimized GPU libraries, particularly the effective use of shared memory and reduction of global memory traffic.
+
+One limitation of this study is that only kernel execution time was measured. Future work could include full end-to-end performance measurements that incorporate memory transfer overheads between host and device memory.
 
 ---
 
-## 8. Future Work
+# 7. Conclusion
+
+This project demonstrated the effectiveness of GPU acceleration for matrix multiplication.
+
+Four implementations were evaluated: a CPU baseline, a naive CUDA implementation, an optimized tiled CUDA implementation using shared memory, and NVIDIA's cuBLAS implementation.
+
+The tiled CUDA implementation achieved a speedup of approximately 11759.88× compared to the CPU baseline, while cuBLAS achieved the highest overall performance with a speedup of approximately 41883.41×.
+
+The results confirm that matrix multiplication is highly suitable for GPU parallelization and that memory optimization through shared memory plays a critical role in achieving high performance.
+
+---
+
+# 8. Future Work
 
 Possible future improvements include:
 
-- Testing larger matrix sizes using longer GPU job limits
-- Including CPU parallel implementations using OpenMP
-- Measuring end-to-end runtime including memory transfers
-- Comparing the implementation with cuBLAS
-- Experimenting with different tile sizes
-- Using profiling tools such as NVIDIA Nsight Compute
+* Testing larger matrix sizes using longer GPU job allocations
+* Adding OpenMP-based CPU parallel implementations
+* Measuring complete end-to-end execution times including memory transfers
+* Comparing against additional high-performance libraries such as CUTLASS and oneMKL
+* Investigating different tile sizes and kernel configurations
+* Profiling the implementation using NVIDIA Nsight Compute
