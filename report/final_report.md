@@ -141,7 +141,7 @@ The following table compares the achieved throughput against the theoretical FP3
 
 #### Speedup Comparison
 
-![Speedup Comparison](../results/graphs/speedup_comparison.png)
+![Speedup Comparison](../results/graphs/throughput_cublas.png.jpeg)
 
 All implementations produced correct results when verified against the CPU reference implementation.
 
