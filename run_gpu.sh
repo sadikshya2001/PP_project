@@ -10,6 +10,6 @@
 
 module load cuda/11.5.0
 
-nvcc src/main.cu -o matmul
+nvcc src/main.cu -o matmul -lcublas
 
 ./matmul
