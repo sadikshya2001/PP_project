@@ -4,7 +4,8 @@
 
 ## Abstract
 
-This project investigates the performance benefits of GPU acceleration for matrix multiplication using CUDA. A CPU implementation, a naive CUDA implementation, a tiled CUDA implementation using shared memory, and NVIDIA's cuBLAS library were developed and evaluated. Performance was benchmarked on the CSC Mahti supercomputer using an NVIDIA A100 GPU. Results show that GPU acceleration provides substantial performance improvements, with the tiled CUDA implementation achieving a speedup of approximately 11,760× and cuBLAS achieving over 41,000× relative to the CPU baseline for the largest tested matrix size.
+This project investigates the performance benefits of GPU acceleration for matrix multiplication using CUDA. A CPU implementation, a naive CUDA implementation, a tiled CUDA implementation using shared memory, and NVIDIA's cuBLAS library were developed and evaluated on the CSC Mahti supercomputer using an NVIDIA A100 GPU. Measured as throughput, the tiled CUDA kernel sustained 3.66 TFLOP/s (approximately 19% of the A100's FP32 peak performance), representing a roughly 1.5× improvement over the naive GPU kernel, while cuBLAS reached 13.0 TFLOP/s (approximately 67% of peak performance). The custom tiled kernel thus achieved roughly 28% of cuBLAS throughput using only shared-memory tiling, demonstrating both the value of memory-hierarchy optimization and the remaining gap between a straightforward CUDA implementation and a highly optimized vendor-provided library.
+
 
 ## 1. Introduction
 
